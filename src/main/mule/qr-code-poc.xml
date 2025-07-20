@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+      xmlns:java="http://www.mulesoft.org/schema/mule/java"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+
+    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config">
+        <http:listener-connection host="0.0.0.0" port="8081">
+		</http:listener-connection>
+    </http:listener-config>
+
+    <flow name="generate-qr-flow">
+        <http:listener path="/generateQR" config-ref="HTTP_Listener_config" doc:name="HTTP Listener">
+			<http:response >
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"mime-type" : "image/png",
+	"Content-Type" : "image/png"
+}]]]></http:headers>
+			</http:response>
+		</http:listener>
+
+        <set-variable value="#[attributes.queryParams.text]" doc:name="Set Text Variable" variableName="text"/>
+
+<!--        <set-variable value="#[vars.text]" variableName="qrBytes" doc:name="Generate QR Code"> -->
+<!--             <invoke-static class="com.example.QRGenerator" method="generateQRCode"> -->
+<!--                 <arg expression="#[vars.text]"/> -->
+<!--                 <arg expression="200"/> -->
+<!--                 <arg expression="200"/> -->
+<!--             </invoke-static> -->
+<!--         </set-variable> -->
+<!-- <component doc:name="Generate QR Code" doc:id="bd9df665-c0bc-43aa-acaf-f2b11f9ed567"> -->
+<!--         <invoke-static class="com.example.qrcode.QRCodeGenerator" method="generateQRCode"> -->
+<!--             <arg expression="#[vars.text]"/> -->
+<!--             <arg expression="200"/> -->
+<!--             <arg expression="200"/> -->
+<!--         </invoke-static> -->
+<!--     </component> -->
+
+		<!-- [STUDIO:"Invoke"]<java:invoke doc:name="Invoke" doc:id="7fe863ad-16d0-46f8-bec7-398342c9deff" class="com.example.QRGenerator" method="generateQRCode">
+			<java:args ><![CDATA[#[vars.text&#93;&#93;&#93;></java:args>
+		</java:invoke> [STUDIO] -->
+		<java:invoke-static method="generateQRCode(java.lang.String,int,int)" doc:name="Invoke static" doc:id="4848f211-5b3a-477c-9e5a-30dd18e58e00" class="com.example.QRGenerator">
+			<java:args ><![CDATA[#[{
+	"text": vars.text,
+	"width": 200,
+	"height": 200
+}]]]></java:args>
+		</java:invoke-static>
+		<!-- [STUDIO:"Set Binary Payload"]<set-payload value="#[vars.qrBytes&#93;" doc:name="Set Binary Payload"/> [STUDIO] -->
+		<!-- [STUDIO:"Set Headers"]<set-variable value="#[{'Content-Type': 'image/png'}&#93;" doc:name="Set Headers" doc:id="6b606d41-1f6a-4e07-9f9b-d1d5e04878bf" variableName="headers"/> [STUDIO] -->
+		<ee:transform doc:name="Transform Message" doc:id="2a1c01de-97e6-40ed-bb83-907e1925c731" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+
+    
+</flow>
+
+</mule>
